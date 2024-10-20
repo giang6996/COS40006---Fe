@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   CButton,
   CCard,
@@ -19,12 +19,63 @@ import {
 } from '@coreui/react'
 import { useNavigate } from 'react-router-dom'
 
+import { getUserRole } from '../../services/authService' // Import the getUserRole function
+import Page404 from '../pages/page404/Page404' // Import your 404 page
+import api from '../../services/api'
+
 const ResidentList = () => {
   const navigate = useNavigate()
+  const [residents, setResidents] = useState([])  // To store the list of users
+  const [userRole, setUserRole] = useState('')
+  const [filters, setFilters] = useState({
+    searchTerm: '',
+    buildingBlock: '',
+    dateFilter: '',
+  })
+
+  useEffect(() => {
+    const role = getUserRole() // Get the current user's role
+    setUserRole(role)
+
+    // Only fetch residents if the user is an Admin
+    if (role === 'Admin') {
+      const fetchResidents = async () => {
+        try {
+          const response = await api.get('/account/list')  // Adjust this API endpoint as needed
+          setResidents(response.data)
+          console.log(response.data)
+        } catch (error) {
+          console.error('Failed to fetch residents:', error)
+        }
+      }
+
+      fetchResidents()
+    }
+  }, [])
 
   const handleViewProfile = (id) => {
-    // navigate(`/residents/${id}`) // Navigate to the resident's profile page
-    navigate(`/profile/detail`) // Navigate to the resident's profile page
+    navigate(`/profile/${id}`)  // Navigate to the resident's profile page with their ID
+  }
+
+  const handleFilterChange = (e) => {
+    setFilters({
+      ...filters,
+      [e.target.name]: e.target.value,
+    })
+  }
+
+  const filteredResidents = residents.filter((resident) => {
+    const { searchTerm, buildingBlock, dateFilter } = filters
+    return (
+      resident.firstName.toLowerCase().includes(searchTerm.toLowerCase()) &&
+      (buildingBlock ? resident.buildingBlock === buildingBlock : true) &&
+      (dateFilter === '1' ? true : true)  // You can implement more advanced filtering logic here
+    )
+  })
+
+  // Render the 404 page if the user is not an Admin
+  if (userRole !== 'Admin') {
+    return <Page404 />
   }
 
   return (
@@ -36,7 +87,12 @@ const ResidentList = () => {
             <CCardBody>
               {/* Search Bar */}
               <CInputGroup className="mb-4">
-                <CFormInput placeholder="Search request and complaint" />
+                <CFormInput
+                  placeholder="Search by name"
+                  name="searchTerm"
+                  value={filters.searchTerm}
+                  onChange={handleFilterChange}
+                />
                 <CInputGroupText>
                   <i className="cil-search"></i>
                 </CInputGroupText>
@@ -45,40 +101,48 @@ const ResidentList = () => {
               {/* Filters */}
               <CRow className="mb-3">
                 <CCol md={3}>
-                  <CFormSelect aria-label="Filter by Date">
-                    <option>Date</option>
+                  <CFormSelect
+                    name="dateFilter"
+                    value={filters.dateFilter}
+                    onChange={handleFilterChange}
+                    aria-label="Filter by Date"
+                  >
+                    <option value="">Date</option>
                     <option value="1">Ascending</option>
                     <option value="2">Descending</option>
                   </CFormSelect>
                 </CCol>
                 <CCol md={3}>
-                  <CFormSelect aria-label="Filter by Building Block">
-                    <option>Building Block</option>
+                  <CFormSelect
+                    name="buildingBlock"
+                    value={filters.buildingBlock}
+                    onChange={handleFilterChange}
+                    aria-label="Filter by Building Block"
+                  >
+                    <option value="">Building Block</option>
                     <option value="A">A</option>
                     <option value="B">B</option>
                     <option value="C">C</option>
                   </CFormSelect>
                 </CCol>
                 <CCol md={3}>
-                  <CFormSelect aria-label="Filter by Date Joined">
-                    <option>Date Joined</option>
-                    <option value="1">Newest First</option>
-                    <option value="2">Oldest First</option>
-                  </CFormSelect>
-                </CCol>
-                <CCol md={3}>
-                  <CButton color="secondary" className="w-100">
+                  <CButton
+                    color="secondary"
+                    className="w-100"
+                    onClick={() => setFilters({ searchTerm: '', buildingBlock: '', dateFilter: '' })}
+                  >
                     Reset Filter
                   </CButton>
                 </CCol>
               </CRow>
 
-              {/* Resident Table */}
+              {/* Resident/User Table */}
               <CTable hover responsive>
                 <CTableHead>
                   <CTableRow>
                     <CTableHeaderCell>ID</CTableHeaderCell>
                     <CTableHeaderCell>Name</CTableHeaderCell>
+                    <CTableHeaderCell>Role</CTableHeaderCell>
                     <CTableHeaderCell>Room Number</CTableHeaderCell>
                     <CTableHeaderCell>Date Joined</CTableHeaderCell>
                     <CTableHeaderCell>Building Block</CTableHeaderCell>
@@ -86,38 +150,24 @@ const ResidentList = () => {
                   </CTableRow>
                 </CTableHead>
                 <CTableBody>
-                  {/* Sample data, replace this with dynamic data */}
-                  <CTableRow>
-                    <CTableDataCell>00001</CTableDataCell>
-                    <CTableDataCell>Christine Brooks</CTableDataCell>
-                    <CTableDataCell>A1919</CTableDataCell>
-                    <CTableDataCell>04 Sep 2019</CTableDataCell>
-                    <CTableDataCell>A</CTableDataCell>
-                    <CTableDataCell>
-                      <CButton
-                        color="primary"
-                        onClick={() => handleViewProfile(1)}
-                      >
-                        View Profile
-                      </CButton>
-                    </CTableDataCell>
-                  </CTableRow>
-                  <CTableRow>
-                    <CTableDataCell>00002</CTableDataCell>
-                    <CTableDataCell>Rosie Pearson</CTableDataCell>
-                    <CTableDataCell>A1912</CTableDataCell>
-                    <CTableDataCell>28 May 2019</CTableDataCell>
-                    <CTableDataCell>A</CTableDataCell>
-                    <CTableDataCell>
-                      <CButton
-                        color="primary"
-                        onClick={() => handleViewProfile(2)}
-                      >
-                        View Profile
-                      </CButton>
-                    </CTableDataCell>
-                  </CTableRow>
-                  {/* Add more rows here */}
+                  {filteredResidents.map((resident) => (
+                    <CTableRow key={resident.id}>
+                      <CTableDataCell>{resident.id}</CTableDataCell>
+                      <CTableDataCell>{resident.firstName} {resident.lastName}</CTableDataCell>
+                      <CTableDataCell>{resident.role}</CTableDataCell> {/* Display role */}
+                      <CTableDataCell>{resident.roomNumber || 'N/A'}</CTableDataCell>
+                      <CTableDataCell>{resident.dateJoined}</CTableDataCell>
+                      <CTableDataCell>{resident.buildingBlock || 'N/A'}</CTableDataCell>
+                      <CTableDataCell>
+                        <CButton
+                          color="primary"
+                          onClick={() => handleViewProfile(resident.id)}
+                        >
+                          View Profile
+                        </CButton>
+                      </CTableDataCell>
+                    </CTableRow>
+                  ))}
                 </CTableBody>
               </CTable>
 

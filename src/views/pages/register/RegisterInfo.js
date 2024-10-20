@@ -35,7 +35,7 @@ const RegisterInfo = () => {
 
   return (
     <div className="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center">
-      <CContainer>
+      <CContainer fluid className="signup-container">
       <CRow>
         <CCol md={8}>
           <CCard>

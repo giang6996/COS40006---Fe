@@ -23,9 +23,6 @@ const Login = () => {
     try {
       await login(email, password);
 
-      console.log(email);
-      console.log(password);
-
       navigate('/dashboard'); // Redirect on successful login
     } catch (error) {
 

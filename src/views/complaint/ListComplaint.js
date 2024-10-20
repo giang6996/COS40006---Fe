@@ -1,26 +1,68 @@
-import React from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
 import {
+  CBadge,
   CButton,
   CCard,
   CCardBody,
   CCol,
   CContainer,
-  CRow,
-  CFormCheck,
-  CFormInput,
-  CFormLabel,
   CListGroup,
   CListGroupItem,
-  CBadge,
+  CFormCheck,
+  CFormInput,
+  CRow,
 } from '@coreui/react'
+import { useNavigate } from 'react-router-dom'
+import { getUserRole } from '../../services/authService'
+import api from '../../services/api'
+import Page404 from '../pages/page404/Page404'
 
 const Complaint = () => {
   const navigate = useNavigate()
+  const [complaints, setComplaints] = useState([])
+  const [userRole, setUserRole] = useState('')
+
+  useEffect(() => {
+    const role = getUserRole()
+    setUserRole(role)
+
+    // Only fetch complaints if the user is allowed
+    if (role === 'Admin') {
+      fetchComplaints()
+    }
+    else{
+      fetchUserComplaints()
+    }
+  }, [])
+
+  const fetchComplaints = async () => {
+    try {
+      const response = await api.get('/form/get-all')
+      setComplaints(response.data)
+    } catch (error) {
+      console.error('Failed to fetch complaints:', error)
+    }
+  }
+
+  const fetchUserComplaints = async () => {
+    try {
+      const response = await api.get('/form/get-user-complaints', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`, // Assuming you store the access token in localStorage
+        },
+      })
+      setComplaints(response.data)
+    } catch (error) {
+      console.error('Failed to fetch user complaints:', error)
+    }
+  }
 
   const handleComplaintClick = (id) => {
-    // navigate(`/complaints/${id}`)
-    navigate(`/complaints/detail`) // Navigate to the complaint detail page with the specific complaint id
+    navigate(`/complaints/detail/${id}`)
+  }
+
+  if (userRole !== 'Admin' && userRole !== 'User') {
+    return <Page404 />
   }
 
   return (
@@ -30,13 +72,16 @@ const Complaint = () => {
           {/* Sidebar Filter */}
           <CCard>
             <CCardBody>
-            <CButton
-                color="primary"
-                className="mb-4 w-100"
-                onClick={() => navigate('/complaints/new')}
-              >
-                Create New...
-              </CButton>
+              {/* Show "Create New" button only for residents */}
+              {userRole !== 'Admin' && (
+                <CButton
+                  color="primary"
+                  className="mb-4 w-100"
+                  onClick={() => navigate('/complaints/new')}
+                >
+                  Create New...
+                </CButton>
+              )}
 
               <h6>Requests / Complaints</h6>
               <CListGroup className="mb-3">
@@ -90,29 +135,19 @@ const Complaint = () => {
               </div>
 
               <CListGroup>
-
-                <CListGroupItem
-                  className="d-flex justify-content-between align-items-center"
-                  onClick={() => handleComplaintClick(1)} // ID of complaint 1
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div>
-                    <CFormCheck id="item-1" label="About the Security Guard in Block C" />
-                  </div>
-                  <CBadge color="info">Security</CBadge>
-                </CListGroupItem>
-
-                <CListGroupItem
-                  className="d-flex justify-content-between align-items-center"
-                  onClick={() => handleComplaintClick(2)} // ID of complaint 2
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div>
-                    <CFormCheck id="item-2" label="Services location?" />
-                  </div>
-                  <CBadge color="secondary">Others</CBadge>
-                </CListGroupItem>
-
+                {complaints.map((complaint) => (
+                  <CListGroupItem
+                    key={complaint.id}
+                    className="d-flex justify-content-between align-items-center"
+                    onClick={() => handleComplaintClick(complaint.id)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div>
+                      <CFormCheck id={`item-${complaint.id}`} label={complaint.title} />
+                    </div>
+                    <CBadge color="info">{complaint.label}</CBadge>
+                  </CListGroupItem>
+                ))}
               </CListGroup>
             </CCardBody>
           </CCard>
