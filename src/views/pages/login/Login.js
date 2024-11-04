@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login } from '../../../services/authService';
+import { login, getUserProfile } from '../../../services/authService';
 import {
   CButton,
   CForm,
@@ -18,12 +18,18 @@ const Login = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  const handleRegister = () => {
+    navigate(`/registerInfo`) // Redirects to the Profile page
+  }
+
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
       await login(email, password);
 
-      navigate('/dashboard'); // Redirect on successful login
+      const accountId = getUserProfile()
+
+      navigate(`/profile/${accountId}`); // Redirect on successful login
     } catch (error) {
 
       console.log(email);
@@ -72,11 +78,9 @@ const Login = () => {
                 <CButton type="submit" color="primary" className="w-100 mb-3">
                   Sign In
                 </CButton>
-                <div className="text-center">
-                  <a href="#" className="text-decoration-none">
-                    Don’t have an account? Click here to Sign Up.
-                  </a>
-                </div>
+                <a href="/#/registerInfo" className="text-center text-decoration-none">
+                  Don’t have an account? Click here to Sign Up.
+                </a>
               </CForm>
             </CCardBody>
           </CCard>

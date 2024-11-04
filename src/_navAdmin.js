@@ -7,12 +7,12 @@ const accountId = getUserProfile();
 
 
 const _navAdmin = [
-  {
-    component: CNavItem,
-    name: 'Admin Dashboard',
-    to: '/admin-dashboard',
-    icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
-  },
+  // {
+  //   component: CNavItem,
+  //   name: 'Admin Dashboard',
+  //   to: '/admin-dashboard',
+  //   icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
+  // },
   {
     component: CNavItem,
     name: 'Admin Profile',

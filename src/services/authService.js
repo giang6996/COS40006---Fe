@@ -1,6 +1,20 @@
 import api from './api';
 import { jwtDecode } from 'jwt-decode';
 
+export const isTokenValid = () => {
+  const token = localStorage.getItem('accessToken');
+  if (!token) return false;
+
+  try {
+    const decoded = jwtDecode(token);
+    const now = Date.now().valueOf() / 1000;
+    return decoded.exp > now; // Check if token expiration is in the future
+  } catch (error) {
+    console.error("Invalid token:", error);
+    return false;
+  }
+};
+
 export const login = async (email, password) => {
   const response = await api.post('/auth/login', { email, password });
   const { accessToken, refreshToken } = response.data;
@@ -16,7 +30,6 @@ export const getUserRole = () => {
   const token = localStorage.getItem('accessToken');
   if (token) {
     const decoded = jwtDecode(token);
-    console.log(decoded['role']);
 
     // Check for the role claim
     return decoded['role'] || decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
