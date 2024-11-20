@@ -1,7 +1,8 @@
-import React, { useEffect, useRef } from 'react'
-import { NavLink } from 'react-router-dom'
+import React, { useEffect, useRef, useContext, useState } from 'react'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import {
+  CBadge,
   CContainer,
   CDropdown,
   CDropdownItem,
@@ -10,16 +11,15 @@ import {
   CHeader,
   CHeaderNav,
   CHeaderToggler,
-  CNavLink,
-  CNavItem,
+  CToast,
+  CToastBody,
+  CToaster,
   useColorModes,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import {
   cilBell,
   cilContrast,
-  cilEnvelopeOpen,
-  cilList,
   cilMenu,
   cilMoon,
   cilSun,
@@ -27,13 +27,31 @@ import {
 
 import { AppBreadcrumb } from './index'
 import { AppHeaderDropdown } from './header/index'
+import { NotificationContext } from '../context/NotificationContext';
 
 const AppHeader = () => {
   const headerRef = useRef()
   const { colorMode, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
+  const { notifications, unreadCount, markAllAsRead, setNotifications } = useContext(NotificationContext);
+  const navigate = useNavigate();
 
   const dispatch = useDispatch()
   const sidebarShow = useSelector((state) => state.sidebarShow)
+
+  const [toasts, setToasts] = useState([]);
+
+  const handleNotificationClick = (alertId) => {
+
+    // Remove notification from the list
+    const updatedNotifications = notifications.filter(notification => notification.alertId !== alertId);
+    setNotifications(updatedNotifications);
+
+    // Update local storage with the modified notifications list
+    localStorage.setItem('notifications', JSON.stringify(updatedNotifications));
+
+    // Navigate to the notification
+    navigate('/falllists', { state: { alertId } });
+  };
 
   useEffect(() => {
     document.addEventListener('scroll', () => {
@@ -41,6 +59,17 @@ const AppHeader = () => {
         headerRef.current.classList.toggle('shadow-sm', document.documentElement.scrollTop > 0)
     })
   }, [])
+
+  // Show a toast notification for each new notification
+  useEffect(() => {
+    if (notifications.length > 0) {
+      const newNotification = notifications[notifications.length - 1];
+      setToasts((prevToasts) => [
+        ...prevToasts,
+        { ...newNotification, id: new Date().getTime() }, // Assign a unique ID for each toast
+      ]);
+    }
+  }, [notifications]);
 
   return (
     <CHeader position="sticky" className="mb-4 p-0" ref={headerRef}>
@@ -51,35 +80,41 @@ const AppHeader = () => {
         >
           <CIcon icon={cilMenu} size="lg" />
         </CHeaderToggler>
-        <CHeaderNav className="d-none d-md-flex">
-          <CNavItem>
-            <CNavLink to="/dashboard" as={NavLink}>
-              Dashboard
-            </CNavLink>
-          </CNavItem>
-          <CNavItem>
-            <CNavLink href="#">Users</CNavLink>
-          </CNavItem>
-          <CNavItem>
-            <CNavLink href="#">Settings</CNavLink>
-          </CNavItem>
-        </CHeaderNav>
         <CHeaderNav className="ms-auto">
-          <CNavItem>
-            <CNavLink href="#">
+        <CDropdown variant="nav-item" placement="bottom-end">
+            <CDropdownToggle caret={false}>
               <CIcon icon={cilBell} size="lg" />
-            </CNavLink>
-          </CNavItem>
-          <CNavItem>
-            <CNavLink href="#">
-              <CIcon icon={cilList} size="lg" />
-            </CNavLink>
-          </CNavItem>
-          <CNavItem>
-            <CNavLink href="#">
-              <CIcon icon={cilEnvelopeOpen} size="lg" />
-            </CNavLink>
-          </CNavItem>
+              {unreadCount > 0 && (
+                <CBadge color="danger" shape="rounded-pill" className="position-absolute top-0 start-100 translate-middle">
+                  {unreadCount}
+                </CBadge>
+              )}
+            </CDropdownToggle>
+            <CDropdownMenu className="pt-0" style={{ width: '300px' }}>
+              <div className="dropdown-header bg-light fw-semibold py-2">Notifications</div>
+              {notifications.length > 0 ? (
+                notifications.slice(0, 5).map((notification, index) => (
+                  <CDropdownItem 
+                  key={index}
+                  onClick={() => handleNotificationClick(notification.alertId)}
+                  >
+                    <strong>{notification.alertMessage || "New Notification"}</strong><br />
+                    <small className="text-muted">
+                      {notification.date && notification.time
+                        ? new Date(`${notification.date}T${notification.time}`).toLocaleString()
+                        : "Invalid Date"}
+                    </small>
+                  </CDropdownItem>
+                ))
+              ) : (
+                <CDropdownItem className="text-center">No new notifications</CDropdownItem>
+              )}
+              <CDropdownItem divider />
+              <CDropdownItem onClick={markAllAsRead} className="text-center">
+                Mark all as read
+              </CDropdownItem>
+            </CDropdownMenu>
+          </CDropdown>
         </CHeaderNav>
         <CHeaderNav>
           <li className="nav-item py-1">
@@ -133,6 +168,21 @@ const AppHeader = () => {
       </CContainer>
       <CContainer className="px-4" fluid>
         <AppBreadcrumb />
+
+        <CToaster position="top-start">
+          {toasts.map((toast) => (
+            <CToast key={toast.id} autohide={5000} visible={true} className="bg-info text-white">
+              <CToastBody>
+                <strong>{toast.alertMessage || "New Notification"}</strong><br />
+                <small>
+                  {toast.date && toast.time
+                    ? new Date(`${toast.date}T${toast.time}`).toLocaleString()
+                    : "Invalid Date"}
+                </small>
+              </CToastBody>
+            </CToast>
+          ))}
+        </CToaster>
       </CContainer>
     </CHeader>
   )

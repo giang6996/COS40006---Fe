@@ -2,8 +2,8 @@ import axios from 'axios';
 
 // Create an Axios instance
 const api = axios.create({
-  baseURL: 'https://localhost:7205/api', // replace with your backend base URL
-  withCredentials: true, // This allows the refresh token to be stored in cookies
+  baseURL: 'https://localhost:7205/api',
+  withCredentials: true, // Allows the refresh token to be stored in cookies
 });
 
 // Interceptor to add Authorization header with access token

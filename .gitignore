@@ -3,10 +3,17 @@
 # dependencies
 /node_modules
 package-lock.json
+package.json
 yarn.lock
 
 # testing
-/coverage
+/tests
+/__mocks__
+.babelrc
+babel.config.js
+jest.config.js
+jest.setup.js
+
 
 # production
 /build

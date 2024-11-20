@@ -46,16 +46,16 @@ export const getUserProfile = () => {
   return null;
 };
 
-export const signup = async (user) => {
-  const response = await api.post('/auth/register', user);
-  const { accessToken, refreshToken } = response.data;
+// export const signup = async (user) => {
+//   const response = await api.post('/auth/register', user);
+//   const { accessToken, refreshToken } = response.data;
 
-  // Store tokens
-  localStorage.setItem('accessToken', accessToken);
-  localStorage.setItem('refreshToken', refreshToken);
+//   // Store tokens
+//   localStorage.setItem('accessToken', accessToken);
+//   localStorage.setItem('refreshToken', refreshToken);
 
-  return response.data;
-};
+//   return response.data;
+// };
 
 export const logout = () => {
   // Clear tokens on logout

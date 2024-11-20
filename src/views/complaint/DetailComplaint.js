@@ -10,33 +10,31 @@ import {
   CImage,
   CRow,
   CFormTextarea,
+  CFormSelect,
 } from '@coreui/react'
-import { getUserRole } from '../../services/authService' // Import getUserRole function
+import { getUserRole } from '../../services/authService'
 import api from '../../services/api'
+import avatar8 from '../../assets/images/avatars/8.jpg'
 
 const ComplaintDetail = () => {
   const { id } = useParams()
   const [complaint, setComplaint] = useState(null)
   const [response, setResponse] = useState('')
   const [status, setStatus] = useState('')
-  const [userRole, setUserRole] = useState('User') // Default to 'User'
+  const [userRole, setUserRole] = useState('User')
 
   useEffect(() => {
-    // Fetch user role when the component is loaded
     const role = getUserRole()
     setUserRole(role)
 
-    // Fetch complaint details
     const fetchComplaint = async () => {
       try {
         const response = await api.get(`/form/get-detail?id=${id}`)
         setComplaint(response.data)
-
-        console.log(response.data)
-
         setStatus(response.data.status)
-        setResponse(response.data.response || '') // Load existing response if any
+        setResponse(response.data.response || '')
       } catch (error) {
+        alert('Failed to fetch complaint detail')
         console.error('Failed to fetch complaint detail', error)
       }
     }
@@ -45,9 +43,14 @@ const ComplaintDetail = () => {
 
   const handleAdminResponse = async () => {
     try {
-      await api.post(`/form/admin-response?id=${id}`, { response, status })
-      alert('Response submitted successfully!')
+      await api.post(`/form/admin-response?id=${id}`, { response, status }, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`, // Include token
+        },
+      })
+      alert('Response and status updated successfully!')
     } catch (error) {
+      alert('Failed to submit response')
       console.error('Failed to submit response', error)
     }
   }
@@ -63,30 +66,26 @@ const ComplaintDetail = () => {
           <h4 className="mb-4">Request/Complaint Detail</h4>
           <CCard>
             <CCardBody>
-              {/* Complaint Title and Label */}
               <h2>{complaint.title}</h2>
               <CBadge color="info" className="mb-4">{complaint.label}</CBadge>
 
-              {/* User Info and Date */}
               <div className="d-flex align-items-center mb-4">
                 <CImage
-                  rounded
-                  src="#" 
-                  alt="User Avatar"
-                  width={50}
-                  height={50}
-                  className="me-3"
-                />
+                      rounded
+                      src={avatar8}
+                      alt="Profile Picture"
+                      width={50}
+                      height={50}
+                      className="mb-3 me-3"
+                    />
                 <div>
                   <strong>{complaint.residentName}</strong> <br />
                   <small>{new Date(complaint.createAt).toLocaleDateString()}</small>
                 </div>
               </div>
 
-              {/* Complaint Description */}
               <p>{complaint.description}</p>
 
-              {/* Admin Response Section - Show only if the user is an Admin */}
               {userRole === 'Admin' ? (
                 <>
                   <h5>Admin Response</h5>
@@ -97,8 +96,15 @@ const ComplaintDetail = () => {
                     placeholder="Enter admin response"
                   />
 
+                  {/* Status Selection */}
+                  <h5 className="mt-3">Status</h5>
+                  <CFormSelect value={status} onChange={(e) => setStatus(e.target.value)}>
+                    <option value="Await">Await</option>
+                    <option value="Completed">Completed</option>
+                  </CFormSelect>
+
                   <CButton color="primary" className="mt-3" onClick={handleAdminResponse}>
-                    Submit Response
+                    Submit Response & Update Status
                   </CButton>
                 </>
               ) : (
@@ -108,9 +114,11 @@ const ComplaintDetail = () => {
                 </>
               )}
 
-              {/* Complaint Status */}
               <p className="mt-4">
-                <strong>Status:</strong> <CBadge color={status === 'Completed' ? 'success' : 'warning'}>{status}</CBadge>
+                <strong>Status:</strong>{' '}
+                <CBadge color={status === 'Completed' ? 'success' : 'warning'}>
+                  {status}
+                </CBadge>
               </p>
             </CCardBody>
           </CCard>

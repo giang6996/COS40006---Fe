@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   CButton,
   CCard,
@@ -13,7 +14,10 @@ import {
 } from '@coreui/react'
 import api from '../../services/api'
 
+
 const CreateComplaint = () => {
+  const navigate = useNavigate()
+
   const [complaint, setComplaint] = useState({
     title: '',
     type: 'Request',
@@ -52,7 +56,9 @@ const CreateComplaint = () => {
         },
       })
       alert('Complaint submitted successfully!')
+      navigate('/complaints')
     } catch (error) {
+      alert('Failed to submit complaint')
       console.error('Failed to submit complaint', error)
     }
   }

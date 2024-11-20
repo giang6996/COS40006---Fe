@@ -31,12 +31,24 @@ const Login = () => {
 
       navigate(`/profile/${accountId}`); // Redirect on successful login
     } catch (error) {
-
-      console.log(email);
-      console.log(password);
       
-      setError('Login failed, please check your credentials.');
-      console.log(error);
+      if (error.response && error.response.data && error.response.data.message) {
+        const errorMessage = error.response.data.message;
+
+        // Set the error message based on specific backend messages
+        if (errorMessage === "Account not found.") {
+          setError("No account found with the provided email.");
+        } else if (errorMessage === "Incorrect password.") {
+          setError("The password you entered is incorrect.");
+        } else if (errorMessage === "Account is not actived") {
+          setError("Your account is not activated. Please contact support.");
+        } else {
+          setError("Login failed. Please check your credentials.");
+        }
+      } else {
+        setError("Login failed. Please try again later.");
+      }
+      console.error("Login error:", error);
     }
   };
 
@@ -78,9 +90,13 @@ const Login = () => {
                 <CButton type="submit" color="primary" className="w-100 mb-3">
                   Sign In
                 </CButton>
-                <a href="/#/registerInfo" className="text-center text-decoration-none">
+                <CButton
+                  onClick={handleRegister}
+                  color="link"
+                  className="text-center text-decoration-none w-100"
+                >
                   Don’t have an account? Click here to Sign Up.
-                </a>
+                </CButton>
               </CForm>
             </CCardBody>
           </CCard>
